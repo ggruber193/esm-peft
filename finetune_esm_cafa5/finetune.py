@@ -28,7 +28,6 @@ TRAINING_PARAMS = {
     "weight_decay": 0.01,
     "seed": 42,
     "lr_scheduler_type": "cosine_with_restarts",
-    "bf16": True,
 }
 
 def main():
@@ -42,6 +41,7 @@ def main():
     parser.add_argument('--epochs', type=int, default=10)
     parser.add_argument('--cpu', type=int, default=4)
     parser.add_argument('--enable-progressbar', action='store_true', default=False)
+    parser.add_argument('--precision', type=str, choices=["f32", "fp16", "bf16"])
 
     args = parser.parse_args()
 
@@ -51,6 +51,7 @@ def main():
     epochs = args.epochs
     grad_accum_steps = batch_size // device_batch_size
     enable_progressbar = args.enable_progressbar
+    precision = args.precision
 
     save_tokenized_dataset = args.save_tokenized_dataset
 
@@ -88,7 +89,15 @@ def main():
     tokenizer.pad_token = tokenizer.eos_token
     data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm_probability=0.15, return_tensors="pt")
 
-    model = EsmForMaskedLM.from_pretrained(model_ckpt, torch_dtype=torch.bfloat16)
+    match precision:
+        case "f16":
+            model_dtype = torch.float16
+        case "bf16":
+            model_dtype = torch.bfloat16
+        case _:
+            model_dtype = torch.float32
+
+    model = EsmForMaskedLM.from_pretrained(model_ckpt, model_dtype=model_dtype)
 
     lora_config = LoraConfig(**LORA_CONFIG)
 
@@ -97,6 +106,9 @@ def main():
     model.print_trainable_parameters()
 
     save_steps = 50
+
+    fp16 = precision == "fp16"
+    bf16 = precision == "bf16"
 
     training_args = TrainingArguments(
         output_dir=str(checkpoint_path),
@@ -109,7 +121,8 @@ def main():
         per_device_train_batch_size=device_batch_size,
         gradient_accumulation_steps=grad_accum_steps,
         remove_unused_columns=False,
-        bf16=TRAINING_PARAMS["bf16"],
+        bf16=bf16,
+        fp16=fp16,
         save_safetensors=False,
         seed=TRAINING_PARAMS["seed"],
         save_steps=save_steps,
