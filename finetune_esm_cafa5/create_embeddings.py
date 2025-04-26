@@ -80,6 +80,8 @@ def main():
     dataset = dataset.map(lambda x: tokenize(x["sequence"], tokenizer),
                           remove_columns=["sequence"], num_proc=8)
 
+    print(f"Begin embedding the dataset using: {device}")
+
     model = EsmModel.from_pretrained(model_ckpt, torch_dtype=torch.bfloat16)
     model = model.to(device)
     model.eval()
