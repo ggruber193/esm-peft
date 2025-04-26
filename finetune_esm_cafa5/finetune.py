@@ -12,7 +12,7 @@ from transformers import EsmForMaskedLM, EsmTokenizer, DataCollatorForLanguageMo
 
 from peft import LoraConfig, PeftModel
 
-from src.dataset.cafa5 import Cafa5Dataset
+from finetune_esm_cafa5.dataset.cafa5 import Cafa5Dataset
 
 LORA_CONFIG = {
     "r": 8,
@@ -32,7 +32,7 @@ TRAINING_PARAMS = {
 }
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data-dir', type=Path, required=True)
     parser.add_argument('--tmp', type=Path)
@@ -43,7 +43,6 @@ if __name__ == '__main__':
     parser.add_argument('--epochs', type=int, default=10)
     parser.add_argument('--cpu', type=int, default=4)
     parser.add_argument('--enable-progressbar', action='store_true', default=False)
-
 
     args = parser.parse_args()
 
@@ -163,3 +162,7 @@ if __name__ == '__main__':
         trainer.train(resume_from_checkpoint=checkpoint_present)
 
     trainer.save_model(str(output_model))
+
+
+if __name__ == '__main__':
+    main()

@@ -2,8 +2,8 @@ from pathlib import Path
 import pandas as pd
 from datasets import Dataset, NamedSplit, DatasetDict, load_from_disk
 
-from src.dataset.fasta_dataset import read_sequences, extract_header_info
-from src.dataset.utils import combine_datasets
+from finetune_esm_cafa5.dataset.fasta_dataset import read_sequences, extract_header_info
+from finetune_esm_cafa5.dataset.utils import combine_datasets
 
 def extract_header_cafa_train(header: str) -> dict:
     header = ' '.join(header.split(' ')[1:])
