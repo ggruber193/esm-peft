@@ -97,7 +97,7 @@ def main():
         case _:
             model_dtype = torch.float32
 
-    model = EsmForMaskedLM.from_pretrained(model_ckpt, model_dtype=model_dtype)
+    model = EsmForMaskedLM.from_pretrained(model_ckpt, torch_dtype=model_dtype)
 
     lora_config = LoraConfig(**LORA_CONFIG)
 
