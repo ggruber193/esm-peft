@@ -1,3 +1,5 @@
+import os
+import shutil
 from pathlib import Path
 import pandas as pd
 from datasets import Dataset, NamedSplit, DatasetDict, load_from_disk
@@ -21,13 +23,18 @@ class Cafa5Dataset:
     Downloads the cafa5 competition dataset and processes it to huggingface datasets.
     Make sure you set the kaggle environment variables KAGGLE_USERNAME and KAGGLE_KEY or have a .env file with the envs.
     """
-    def __init__(self, data_dir: str | Path, tmp: str | Path = None):
+    def __init__(self, data_dir: str | Path, tmp: str | Path = None, cluster_file: str | Path = None):
         self.data_dir = Path(data_dir)
+        self.embedding_dir = self.data_dir / "embeddings"
         self._dataset_path = self.data_dir.joinpath("dataset")
         self._tmp = tmp
 
         self._download_dataset()
-        self._create_dataset()
+        dataset = self._create_dataset()
+        if cluster_file is not None and 'group' not in dataset["train"].column_names:
+            self.add_cluster_groups(cluster_file)
+
+        self._unique_go_terms = None
 
     def _download_dataset(self):
         if len(list(self.data_dir.glob("*"))) == 0:
@@ -88,6 +95,9 @@ class Cafa5Dataset:
                 "test": dataset_test
             })
             dataset.save_to_disk(self._dataset_path, max_shard_size="50MB")
+        else:
+            dataset = load_from_disk(self._dataset_path)
+        return dataset
 
     def get_dataset_for_mlm(self):
         dataset = load_from_disk(self._dataset_path)
@@ -106,10 +116,45 @@ class Cafa5Dataset:
         df_cluster = df_cluster.groupby(["query"]).agg({"target": list}).reset_index(drop=True).reset_index(
             names=["group"]).explode(["target"])
         cluster_dict = dict(zip(df_cluster["target"], df_cluster["group"]))
-        dataset = dataset.map(lambda x: {"group": cluster_dict[x["id"]]})
-        dataset.save_to_disk(self._dataset_path, max_shard_size="50MB")
+
+        tmp_dir = self.data_dir.joinpath("_dataset_tmp")
+        dataset["train"] = dataset["train"].map(lambda x: {"group": cluster_dict[x["id"]]})
+        dataset["train"].save_to_disk(tmp_dir, max_shard_size="50MB")
+        train_path = self._dataset_path.joinpath("train")
+        shutil.rmtree(train_path)
+        shutil.move(tmp_dir, train_path)
+
+    def _get_unique_go_terms(self):
+        if self._unique_go_terms is not None:
+            unique_go_terms = self._unique_go_terms
+        else:
+            terms_file = self.data_dir.joinpath("Train/train_terms.tsv")
+            df_terms = pd.read_csv(terms_file, sep="\t")
+            unique_go_terms = df_terms["term"].unique().tolist()
+            self._unique_go_terms = unique_go_terms
+        return unique_go_terms
+
+    @property
+    def term_to_label_mapping(self):
+        unique_go_terms = self._get_unique_go_terms()
+        term_to_label_mapping = {j: i for i, j in enumerate(unique_go_terms)}
+        return term_to_label_mapping
+
+    @property
+    def label_to_term_mapping(self):
+        unique_go_terms = self._get_unique_go_terms()
+        label_to_term_mapping = {i: j for i, j in enumerate(unique_go_terms)}
+        return label_to_term_mapping
+
+    def get_dataset_for_classification(self):
+        dataset = load_from_disk(self._dataset_path)
+        dataset = dataset["train"]
+        dataset = dataset.train_test_split(train_size=0.8, test_size=0.2)
+
+
 
 
 if __name__ == '__main__':
-    dataset = Cafa5Dataset("../../data/cafa5_new").get_dataset_for_mlm()
-    print(dataset)
+    dataset = Cafa5Dataset("../../data/cafa5", cluster_file='../../data/cafa5/Train/train_sequences_cluster.tsv')
+
+    print(dataset.get_dataset())
