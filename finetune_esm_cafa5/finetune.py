@@ -31,7 +31,6 @@ TRAINING_PARAMS = {
     "bf16": True,
 }
 
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data-dir', type=Path, required=True)
@@ -97,6 +96,8 @@ def main():
 
     model.print_trainable_parameters()
 
+    save_steps = 50
+
     training_args = TrainingArguments(
         output_dir=str(checkpoint_path),
         eval_strategy="steps",
@@ -111,10 +112,10 @@ def main():
         bf16=TRAINING_PARAMS["bf16"],
         save_safetensors=False,
         seed=TRAINING_PARAMS["seed"],
-        save_steps=100,
+        save_steps=save_steps,
         group_by_length=True,
         logging_strategy='steps',
-        logging_steps=50,
+        logging_steps=save_steps,
         save_total_limit=2,
         disable_tqdm=not enable_progressbar
     )
@@ -156,8 +157,7 @@ def main():
             run_file.write_text(json.dumps({"run_id": run.info.run_id}))
 
         if not checkpoint_present:
-            mlflow.log_params(LORA_CONFIG)
-            mlflow.log_params(TRAINING_PARAMS)
+            mlflow.log_params({f"lora_{i}": j for i, j in LORA_CONFIG.items()} | TRAINING_PARAMS)
 
         trainer.train(resume_from_checkpoint=checkpoint_present)
 

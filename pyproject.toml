@@ -12,7 +12,7 @@ dependencies = [
     "mlflow-skinny~=2.22.0",
     "numpy~=2.2.5",
     "torch~=2.7.0",
-    "transformers~=4.46.3",  # this one is important bc error in newest version
+    "transformers==4.46.3",  # this one is important bc error in newest version
     "peft~=0.15.2",
 ]
 
