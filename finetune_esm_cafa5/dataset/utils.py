@@ -2,13 +2,17 @@ import datasets
 from datasets import Dataset, DatasetDict
 
 
-def sample_dataset(dataset: Dataset | DatasetDict, n: int) -> Dataset | DatasetDict:
+def sample_dataset(dataset: Dataset | DatasetDict, n: int | dict[str, int], offset: int | dict[str, int]=0) -> Dataset | DatasetDict:
     if isinstance(dataset, DatasetDict):
+        out_dataset = {}
         for key in dataset.keys():
-            dataset[key] = dataset[key].select(range(n))
+            c_n = n[key]
+            c_offset = offset[key]
+            out_dataset[key] = dataset[key].select(range(c_offset, c_offset + c_n))
+        out_dataset = DatasetDict(out_dataset)
     else:
-        dataset = dataset.select(range(n))
-    return dataset
+        out_dataset = dataset.select(range(n))
+    return out_dataset
 
 
 def combine_datasets(dataset: DatasetDict):

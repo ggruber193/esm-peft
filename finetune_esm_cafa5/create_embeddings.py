@@ -1,3 +1,4 @@
+import math
 from pathlib import Path
 
 import torch
@@ -33,12 +34,21 @@ def main():
     parser.add_argument('--data-dir', type=Path, required=True)
     parser.add_argument('--model-name', type=str, default="esm2_t6_8M_UR50D")
     parser.add_argument('--cpu', type=int, default=1)
+    parser.add_argument('--split', type=int, default=10)
+    parser.add_argument('--fold', type=int, default=0)
+    parser.add_argument('--tmp', type=Path, required=False)
 
     args = parser.parse_args()
+
+    split = args.split
+    fold = args.fold
+    assert fold < split, f"Fold should be smaller than number of splits"
+
     data_dir = args.data_dir
     model_name = args.model_name
+    tmp_dir = args.tmp
 
-    cafa5_dataset = Cafa5Dataset(data_dir)
+    cafa5_dataset = Cafa5Dataset(data_dir, tmp=tmp_dir)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.backends.cuda.matmul.allow_tf32 = True
@@ -56,6 +66,15 @@ def main():
         cols = set(dataset[key].column_names)
         cols = cols.difference(keep_cols)
         dataset[key] = dataset[key].remove_columns(list(cols))
+
+    if split > 1:
+        total_samples_per_split = {key: len(dataset[key]) for key in dataset.keys()}
+        n_samples_per_split = {key: math.ceil(val / split) for key, val in total_samples_per_split.items()}
+        offset = {key: int(val * fold) for key, val in n_samples_per_split.items()}
+        n_samples = {key: int(min(val, total_samples_per_split[key] - offset[key])) for key, val in
+                     n_samples_per_split.items()}
+        dataset = sample_dataset(dataset, n_samples, offset)
+        output_dir = output_dir.joinpath(f"split_{fold}")
 
     # tokenize sequences // truncate input_ids to esm2 training sequence length
     dataset = dataset.map(lambda x: tokenize(x["sequence"], tokenizer),
