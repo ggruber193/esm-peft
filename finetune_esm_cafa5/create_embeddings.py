@@ -50,14 +50,13 @@ def main():
 
     cafa5_dataset = Cafa5Dataset(data_dir, tmp=tmp_dir)
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"GPU available: {torch.cuda.is_available()}")
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     torch.backends.cuda.matmul.allow_tf32 = True
 
     output_dir = cafa5_dataset.embedding_dir.joinpath(model_name)
 
     model_ckpt = f"facebook/{model_name}"
-
-    tokenizer = EsmTokenizer.from_pretrained(model_ckpt)
 
     dataset = cafa5_dataset.get_dataset().with_format("torch")
 
@@ -76,6 +75,7 @@ def main():
         dataset = sample_dataset(dataset, n_samples, offset)
         output_dir = output_dir.joinpath(f"split_{fold}")
 
+    tokenizer = EsmTokenizer.from_pretrained(model_ckpt)
     # tokenize sequences // truncate input_ids to esm2 training sequence length
     dataset = dataset.map(lambda x: tokenize(x["sequence"], tokenizer),
                           remove_columns=["sequence"], num_proc=8)
