@@ -116,7 +116,7 @@ def main():
         logging_strategy='steps',
         logging_steps=50,
         save_total_limit=2,
-        disable_tqdm=enable_progressbar
+        disable_tqdm=not enable_progressbar
     )
 
     trainer = Trainer(
