@@ -31,7 +31,7 @@ def inference(x, device, model):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data-dir', type=Path, required=True)
-    parser.add_argument('--model-name', type="str", default="esm2_t6_8M_UR50D")
+    parser.add_argument('--model-name', type=str, default="esm2_t6_8M_UR50D")
     parser.add_argument('--cpu', type=int, default=1)
 
     args = parser.parse_args()
