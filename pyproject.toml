@@ -19,6 +19,9 @@ dependencies = [
     "peft~=0.15.2",
 ]
 
+[tool.setuptools.packages.find]
+where = ["src"]
+
 requires-python = ">= 3.12"
 
 [project.scripts]
