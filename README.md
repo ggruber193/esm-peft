@@ -8,7 +8,7 @@ Coming from bioinformatics I thought protein function prediction would be a nice
 
 So I decided make my own solution for the [CAFA5 Challenge](https://www.kaggle.com/competitions/cafa-5-protein-function-prediction/overview).
 
-In my approach I want to use PEFT (specifially LoRA) to fine-tune a protein language model (PLM) (specifically [ESM2]()) on the competition data and use the embeddings generated from the PLM and use them for predicting protein function.
+In my approach I want to use PEFT (specifially LoRA) to fine-tune a protein language model (PLM) (specifically [ESM2](https://github.com/facebookresearch/esm)) on the competition data and use the embeddings generated from the PLM and use them for predicting protein function.
 
 To compare the preformance of fine-tuning on this dataset will be measured against a baseline by taking embeddings generated from the pretrained model.
 
