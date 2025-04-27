@@ -34,7 +34,7 @@ def main():
     parser.add_argument('--data-dir', type=Path, required=True)
     parser.add_argument('--model-name', type=str, default="esm2_t6_8M_UR50D")
     parser.add_argument('--cpu', type=int, default=1)
-    parser.add_argument('--split', type=int, default=10)
+    parser.add_argument('--split', type=int, default=1)
     parser.add_argument('--fold', type=int, default=0)
     parser.add_argument('--tmp', type=Path, required=False)
 
