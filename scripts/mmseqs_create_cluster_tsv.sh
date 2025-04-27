@@ -1,0 +1,19 @@
+INPUT_FASTA=$1
+OUTPUT_DIR=$2
+
+
+FILENAME=$(basename "$INPUT_FASTA" | cut -d '.' -f1)
+MMSEQS_DB="$OUTPUT_DIR/mmseqs_db"
+MMSEQS_CLUSTER_DB="$OUTPUT_DIR/mmseqs_cluster_db"
+TMP_DIR="$OUTPUT_DIR/mmseqs_tmp"
+OUTPUT_FILE="$OUTPUT_DIR/$FILENAME"_cluster.tsv
+
+mkdir -p "$OUTPUT_DIR" "$MMSEQS_DB" "$MMSEQS_CLUSTER_DB" "$TMP_DIR"
+
+mmseqs createdb "$INPUT_FASTA" "$MMSEQS_DB/$FILENAME"
+
+mmseqs cluster "$MMSEQS_DB/$FILENAME" "$MMSEQS_CLUSTER_DB/$FILENAME" "$TMP_DIR" -c 0.8 --min-seq-id 0.3 --cov-mode 1
+
+mmseqs createtsv "$MMSEQS_DB/$FILENAME" "$MMSEQS_DB/$FILENAME" "$MMSEQS_CLUSTER_DB/$FILENAME" $OUTPUT_FILE
+
+rm -r "$MMSEQS_DB" "$MMSEQS_CLUSTER_DB" "$TMP_DIR"
